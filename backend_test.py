@@ -146,7 +146,10 @@ class AdbhogAPITester:
         """Test getting categories"""
         success, response = self.run_test("Get Categories", "GET", "api/categories", 200)
         if success and 'categories' in response:
-            print(f"   Categories: {response['categories']}")
+            categories = response['categories']
+            print(f"   Found {len(categories)} categories")
+            for cat in categories:
+                print(f"   - {cat['name']}: {cat['description']}")
         return success
 
     def test_location_check(self):
