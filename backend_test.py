@@ -226,19 +226,28 @@ class AdbhogAPITester:
         return self.run_test("Clear Cart", "DELETE", "api/cart/clear", 200, auth_required=True)
 
 def main():
-    print("🚀 Starting Adbhog API Tests")
+    print("🚀 Starting Adbhog Grocery API Tests")
     print("=" * 50)
     
     tester = AdbhogAPITester()
     
-    # Test sequence
+    # Test sequence - Authentication first, then other features
     test_functions = [
+        # Basic endpoints
         tester.test_root_endpoint,
         tester.test_get_products,
         tester.test_get_categories,
         tester.test_get_products_with_category,
-        tester.test_get_products_with_search,
+        tester.test_get_products_with_advanced_filters,
+        tester.test_search_suggestions,
         tester.test_location_check,
+        
+        # Authentication tests
+        tester.test_user_registration,
+        tester.test_get_current_user,
+        tester.test_protected_endpoint_without_auth,
+        
+        # Authenticated cart and order operations
         tester.test_add_to_cart,
         tester.test_get_cart,
         tester.test_update_cart,
@@ -261,10 +270,17 @@ def main():
     print(f"📊 Test Results: {tester.tests_passed}/{tester.tests_run} tests passed")
     
     if tester.tests_passed == tester.tests_run:
-        print("🎉 All tests passed! Backend API is working correctly.")
+        print("🎉 All tests passed! Adbhog Grocery API is working correctly.")
+        print("✅ Authentication system working")
+        print("✅ Product filtering and search working")
+        print("✅ Cart operations working")
+        print("✅ Order placement working")
         return 0
     else:
-        print(f"⚠️  {tester.tests_run - tester.tests_passed} tests failed.")
+        failed_tests = tester.tests_run - tester.tests_passed
+        print(f"⚠️  {failed_tests} tests failed.")
+        if failed_tests > (tester.tests_run * 0.5):
+            print("🚨 More than 50% of tests failed - major issues detected!")
         return 1
 
 if __name__ == "__main__":
