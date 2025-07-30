@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ShoppingCart, Search, MapPin, Star, Plus, Minus, Trash2, Heart, Clock, CheckCircle, X, ChevronRight, Zap, Gift, Coffee, Smartphone, Sparkles, Apple, Milk, Wheat, Candy, Gamepad2, ShirtIcon, Diamond, Snowflake, IceCream, Package } from 'lucide-react';
+import { ShoppingCart, Search, MapPin, Star, Plus, Minus, Trash2, Heart, Clock, CheckCircle, X, ChevronRight, Zap, Gift, Coffee, User, LogOut, Eye, EyeOff, Filter, SlidersHorizontal } from 'lucide-react';
 import { Button } from './components/ui/button';
 import { Input } from './components/ui/input';
 import { Card, CardContent } from './components/ui/card';
@@ -7,12 +7,15 @@ import { Badge } from './components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from './components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './components/ui/select';
 import { Textarea } from './components/ui/textarea';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from './components/ui/tabs';
+import { Slider } from './components/ui/slider';
 import './App.css';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || import.meta.env.REACT_APP_BACKEND_URL;
 
 function App() {
   const [products, setProducts] = useState([]);
+  const [allProducts, setAllProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
@@ -21,15 +24,37 @@ function App() {
   const [cartCount, setCartCount] = useState(0);
   const [showCart, setShowCart] = useState(false);
   const [showCheckout, setShowCheckout] = useState(false);
+  const [showAuth, setShowAuth] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
+  const [authMode, setAuthMode] = useState('login'); // 'login' or 'register'
   const [checkoutStep, setCheckoutStep] = useState(1);
   const [orderSuccess, setOrderSuccess] = useState(false);
   const [loading, setLoading] = useState(true);
   const [currentLocation, setCurrentLocation] = useState('Gomti Nagar, Viram Khand 5, Lucknow...');
   const [isServiceable, setIsServiceable] = useState(true);
   const [orderDetails, setOrderDetails] = useState(null);
+  const [user, setUser] = useState(null);
+  const [token, setToken] = useState(localStorage.getItem('adbhog_token'));
+  const [showPassword, setShowPassword] = useState(false);
+  const [searchSuggestions, setSuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
 
-  // Mock user ID for demo
-  const userId = 'demo-user-123';
+  // Filter states
+  const [filters, setFilters] = useState({
+    subcategory: '',
+    minPrice: 0,
+    maxPrice: 1000,
+    brand: '',
+    sortBy: 'name'
+  });
+
+  // Auth form data
+  const [authData, setAuthData] = useState({
+    name: '',
+    email: '',
+    password: '',
+    phone: ''
+  });
 
   // Checkout form data
   const [checkoutData, setCheckoutData] = useState({
@@ -39,104 +64,68 @@ function App() {
     paymentMethod: 'cod'
   });
 
-  // Category icons mapping
-  const categoryIcons = {
-    'Fruits & Vegetables': Apple,
-    'Dairy': Milk,
-    'Grains': Wheat,
-    'Snacks': Candy,
-    'Pantry': Package,
-    'Electronics': Smartphone,
-    'Beauty': Sparkles,
-    'Cafe': Coffee,
-    'Toys': Gamepad2,
-    'Fashion': ShirtIcon,
-    'Jewellery': Diamond,
-    'Frozen': Snowflake,
-    'Ice Creams': IceCream
-  };
-
-  const categoryData = [
-    { name: 'Fruits & Vegetables', icon: Apple, color: 'bg-green-100' },
-    { name: 'Dairy', icon: Milk, color: 'bg-blue-100' },
-    { name: 'Grains', icon: Wheat, color: 'bg-yellow-100' },
-    { name: 'Snacks', icon: Candy, color: 'bg-red-100' },
-    { name: 'Pantry', icon: Package, color: 'bg-orange-100' },
-    { name: 'Electronics', icon: Smartphone, color: 'bg-purple-100' },
-    { name: 'Beauty', icon: Sparkles, color: 'bg-pink-100' },
-    { name: 'Cafe', icon: Coffee, color: 'bg-amber-100' },
-    { name: 'Toys', icon: Gamepad2, color: 'bg-indigo-100' },
-    { name: 'Fashion', icon: ShirtIcon, color: 'bg-teal-100' },
-    { name: 'Jewellery', icon: Diamond, color: 'bg-cyan-100' },
-    { name: 'Frozen', icon: Snowflake, color: 'bg-slate-100' }
+  // Grocery-focused categories
+  const groceryCategories = [
+    { name: 'Fruits & Vegetables', icon: '🥬', color: 'bg-green-100' },
+    { name: 'Dairy & Eggs', icon: '🥛', color: 'bg-blue-100' },
+    { name: 'Grains & Cereals', icon: '🌾', color: 'bg-yellow-100' },
+    { name: 'Cooking Essentials', icon: '🫒', color: 'bg-orange-100' },
+    { name: 'Snacks & Beverages', icon: '🥜', color: 'bg-red-100' },
+    { name: 'Household Care', icon: '🧽', color: 'bg-purple-100' }
   ];
 
-  // Coffee products for featured section
-  const [coffeeProducts, setCoffeeProducts] = useState([
-    {
-      id: 'coffee-1',
-      name: 'Classic Cold Coffee',
-      price: 85,
-      image: 'https://images.unsplash.com/photo-1461023058943-07fcbe16d735',
-      category: 'Beverages',
-      rating: 4.6
-    },
-    {
-      id: 'coffee-2',
-      name: 'Premium Latte',
-      price: 95,
-      image: 'https://images.unsplash.com/photo-1509042239860-f550ce710b93',
-      category: 'Beverages',
-      rating: 4.8
-    },
-    {
-      id: 'coffee-3',
-      name: 'Cappuccino Special',
-      price: 90,
-      image: 'https://images.unsplash.com/photo-1506619216599-9d16d0903dfd',
-      category: 'Beverages',
-      rating: 4.7
-    },
-    {
-      id: 'coffee-4',
-      name: 'Iced Americano',
-      price: 75,
-      image: 'https://images.unsplash.com/photo-1461023058943-07fcbe16d735',
-      category: 'Beverages',
-      rating: 4.5
-    },
-    {
-      id: 'coffee-5',
-      name: 'Mocha Delight',
-      price: 110,
-      image: 'https://images.unsplash.com/photo-1509042239860-f550ce710b93',
-      category: 'Beverages',
-      rating: 4.9
-    }
-  ]);
-
   useEffect(() => {
+    if (token) {
+      getCurrentUser();
+    }
     fetchProducts();
     fetchCategories();
-    fetchCart();
+    if (token) {
+      fetchCart();
+    }
     checkLocation();
-  }, []);
+  }, [token]);
 
   useEffect(() => {
-    const filtered = products.filter(product => {
-      const matchesCategory = selectedCategory === 'All' || product.category === selectedCategory;
-      const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                           product.description.toLowerCase().includes(searchQuery.toLowerCase());
-      return matchesCategory && matchesSearch;
-    });
-    setProducts(filtered);
-  }, [selectedCategory, searchQuery]);
+    applyFilters();
+  }, [selectedCategory, searchQuery, filters, allProducts]);
+
+  useEffect(() => {
+    if (searchQuery.length > 2) {
+      fetchSearchSuggestions();
+    } else {
+      setSuggestions([]);
+      setShowSuggestions(false);
+    }
+  }, [searchQuery]);
+
+  const getCurrentUser = async () => {
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/auth/me`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      const data = await response.json();
+      if (data.success) {
+        setUser(data.user);
+      } else {
+        localStorage.removeItem('adbhog_token');
+        setToken(null);
+      }
+    } catch (error) {
+      console.error('Error getting current user:', error);
+      localStorage.removeItem('adbhog_token');
+      setToken(null);
+    }
+  };
 
   const fetchProducts = async () => {
     try {
       const response = await fetch(`${BACKEND_URL}/api/products`);
       const data = await response.json();
       if (data.success) {
+        setAllProducts(data.products);
         setProducts(data.products);
       }
     } catch (error) {
@@ -151,7 +140,7 @@ function App() {
       const response = await fetch(`${BACKEND_URL}/api/categories`);
       const data = await response.json();
       if (data.success) {
-        setCategories(data.categories);
+        setCategories(['All', ...data.categories.map(cat => cat.name)]);
       }
     } catch (error) {
       console.error('Error fetching categories:', error);
@@ -159,8 +148,14 @@ function App() {
   };
 
   const fetchCart = async () => {
+    if (!token) return;
+    
     try {
-      const response = await fetch(`${BACKEND_URL}/api/cart/${userId}`);
+      const response = await fetch(`${BACKEND_URL}/api/cart`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
       const data = await response.json();
       if (data.success) {
         setCart(data.cart);
@@ -169,6 +164,19 @@ function App() {
       }
     } catch (error) {
       console.error('Error fetching cart:', error);
+    }
+  };
+
+  const fetchSearchSuggestions = async () => {
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/search/suggestions?q=${searchQuery}`);
+      const data = await response.json();
+      if (data.success) {
+        setSuggestions(data.suggestions);
+        setShowSuggestions(true);
+      }
+    } catch (error) {
+      console.error('Error fetching suggestions:', error);
     }
   };
 
@@ -184,17 +192,126 @@ function App() {
     }
   };
 
+  const applyFilters = () => {
+    let filtered = [...allProducts];
+
+    // Category filter
+    if (selectedCategory !== 'All') {
+      filtered = filtered.filter(product => product.category === selectedCategory);
+    }
+
+    // Search filter
+    if (searchQuery) {
+      filtered = filtered.filter(product =>
+        product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        product.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        product.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (product.tags && product.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase())))
+      );
+    }
+
+    // Price filter
+    filtered = filtered.filter(product => 
+      product.price >= filters.minPrice && product.price <= filters.maxPrice
+    );
+
+    // Brand filter
+    if (filters.brand) {
+      filtered = filtered.filter(product => 
+        product.brand.toLowerCase().includes(filters.brand.toLowerCase())
+      );
+    }
+
+    // Subcategory filter
+    if (filters.subcategory) {
+      filtered = filtered.filter(product => 
+        product.subcategory && product.subcategory.toLowerCase().includes(filters.subcategory.toLowerCase())
+      );
+    }
+
+    // Sort
+    switch (filters.sortBy) {
+      case 'price_low':
+        filtered.sort((a, b) => a.price - b.price);
+        break;
+      case 'price_high':
+        filtered.sort((a, b) => b.price - a.price);
+        break;
+      case 'rating':
+        filtered.sort((a, b) => b.rating - a.rating);
+        break;
+      default:
+        filtered.sort((a, b) => a.name.localeCompare(b.name));
+    }
+
+    setProducts(filtered);
+  };
+
+  const handleAuth = async (e) => {
+    e.preventDefault();
+    
+    try {
+      const endpoint = authMode === 'login' ? '/api/auth/login' : '/api/auth/register';
+      const payload = authMode === 'login' 
+        ? { email: authData.email, password: authData.password }
+        : authData;
+
+      const response = await fetch(`${BACKEND_URL}${endpoint}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json();
+      
+      if (data.success) {
+        setToken(data.token);
+        setUser(data.user);
+        localStorage.setItem('adbhog_token', data.token);
+        setShowAuth(false);
+        setAuthData({ name: '', email: '', password: '', phone: '' });
+        
+        // Fetch cart after login
+        setTimeout(() => {
+          fetchCart();
+        }, 100);
+      } else {
+        alert(data.detail || 'Authentication failed');
+      }
+    } catch (error) {
+      console.error('Auth error:', error);
+      alert('Authentication failed. Please try again.');
+    }
+  };
+
+  const handleLogout = () => {
+    setToken(null);
+    setUser(null);
+    setCart([]);
+    setCartTotal(0);
+    setCartCount(0);
+    localStorage.removeItem('adbhog_token');
+  };
+
   const addToCart = async (productId, quantity = 1) => {
+    if (!token) {
+      setShowAuth(true);
+      return;
+    }
+
     try {
       const response = await fetch(`${BACKEND_URL}/api/cart/add`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
           product_id: productId,
           quantity: quantity,
-          user_id: userId
+          user_id: 'will_be_overridden'
         }),
       });
 
@@ -212,11 +329,12 @@ function App() {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
           product_id: productId,
           quantity: quantity,
-          user_id: userId
+          user_id: 'will_be_overridden'
         }),
       });
 
@@ -234,8 +352,11 @@ function App() {
 
   const clearCart = async () => {
     try {
-      const response = await fetch(`${BACKEND_URL}/api/cart/clear/${userId}`, {
+      const response = await fetch(`${BACKEND_URL}/api/cart/clear`, {
         method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
       });
 
       if (response.ok) {
@@ -247,6 +368,10 @@ function App() {
   };
 
   const handleCheckout = () => {
+    if (!token) {
+      setShowAuth(true);
+      return;
+    }
     setShowCart(false);
     setShowCheckout(true);
     setCheckoutStep(1);
@@ -276,9 +401,9 @@ function App() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
-          user_id: userId,
           items: orderItems,
           total_amount: cartTotal,
           delivery_address: checkoutData.address,
@@ -333,7 +458,18 @@ function App() {
             </div>
             
             <h3 className="font-semibold text-gray-900 mb-1">{product.name}</h3>
+            <p className="text-xs text-green-600 mb-1">{product.brand}</p>
             <p className="text-sm text-gray-600 mb-2">{product.unit}</p>
+            
+            {product.tags && (
+              <div className="flex gap-1 mb-2">
+                {product.tags.slice(0, 2).map((tag, index) => (
+                  <Badge key={index} variant="secondary" className="text-xs">
+                    {tag}
+                  </Badge>
+                ))}
+              </div>
+            )}
             
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -378,30 +514,6 @@ function App() {
     );
   };
 
-  const CoffeeProductCard = ({ product }) => {
-    return (
-      <div className="coffee-product-card relative">
-        <img
-          src={product.image}
-          alt={product.name}
-          className="w-full h-32 object-cover rounded-lg"
-        />
-        <div className="absolute top-2 right-2">
-          <Badge className="bg-green-600 text-white text-xs">0</Badge>
-        </div>
-        <div className="mt-2">
-          <h4 className="font-medium text-sm">{product.name}</h4>
-          <div className="flex items-center justify-between mt-1">
-            <span className="font-bold text-sm">₹{product.price}</span>
-            <Button size="sm" className="h-6 px-3 text-xs bg-pink-500 hover:bg-pink-600">
-              ADD
-            </Button>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -418,14 +530,14 @@ function App() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-6">
               <div className="flex items-center gap-3">
-                <h1 className="text-2xl font-bold text-purple-600">adbhog</h1>
-                <Badge className="bg-green-500 text-white px-2 py-1 text-xs">SUPER SAVER</Badge>
+                <h1 className="text-2xl font-bold text-green-600">adbhog</h1>
+                <Badge className="bg-green-500 text-white px-2 py-1 text-xs">GROCERY FRESH</Badge>
               </div>
               
               <div className="flex flex-col">
                 <div className="flex items-center gap-2">
                   <span className="font-semibold text-sm">Delivery in</span>
-                  <span className="font-bold text-green-600">6 Mins</span>
+                  <span className="font-bold text-green-600">15 Mins</span>
                   <Zap className="w-4 h-4 text-blue-500" />
                 </div>
                 <div className="flex items-center gap-1 text-xs text-gray-600">
@@ -440,16 +552,48 @@ function App() {
               <div className="relative">
                 <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                 <Input
-                  placeholder="Search for cheese slices"
+                  placeholder="Search groceries, grains, dairy..."
                   className="pl-10 w-80"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
+                  onFocus={() => searchQuery.length > 2 && setShowSuggestions(true)}
+                  onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
                 />
+                
+                {/* Search Suggestions */}
+                {showSuggestions && searchSuggestions.length > 0 && (
+                  <div className="absolute top-full left-0 right-0 bg-white border rounded-lg shadow-lg mt-1 z-50">
+                    {searchSuggestions.map((suggestion, index) => (
+                      <div
+                        key={index}
+                        className="px-4 py-2 hover:bg-gray-50 cursor-pointer"
+                        onClick={() => {
+                          setSearchQuery(suggestion);
+                          setShowSuggestions(false);
+                        }}
+                      >
+                        {suggestion}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
               
-              <Button variant="ghost" size="sm">
-                Login
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => user ? null : setShowAuth(true)}
+                className="flex items-center gap-2"
+              >
+                <User className="w-4 h-4" />
+                {user ? user.name : 'Login'}
               </Button>
+              
+              {user && (
+                <Button variant="ghost" size="sm" onClick={handleLogout}>
+                  <LogOut className="w-4 h-4" />
+                </Button>
+              )}
               
               <Button
                 variant="outline"
@@ -471,25 +615,32 @@ function App() {
         {/* Category Tabs */}
         <div className="border-t bg-white">
           <div className="container mx-auto px-4 py-2">
-            <div className="flex gap-6 overflow-x-auto">
-              {['All', 'Cafe', 'Home', 'Toys', 'Fresh', 'Electronics', 'Mobiles', 'Beauty', 'Fashion'].map((category) => (
-                <button
-                  key={category}
-                  className={`flex items-center gap-2 px-4 py-2 text-sm font-medium whitespace-nowrap transition-colors
-                    ${selectedCategory === category 
-                      ? 'text-purple-600 border-b-2 border-purple-600' 
-                      : 'text-gray-600 hover:text-purple-600'
-                    }`}
-                  onClick={() => setSelectedCategory(category)}
-                >
-                  {category === 'All' && <Package className="w-4 h-4" />}
-                  {category === 'Cafe' && <Coffee className="w-4 h-4" />}
-                  {category === 'Electronics' && <Smartphone className="w-4 h-4" />}
-                  {category === 'Beauty' && <Sparkles className="w-4 h-4" />}
-                  {category === 'Fashion' && <ShirtIcon className="w-4 h-4" />}
-                  {category}
-                </button>
-              ))}
+            <div className="flex items-center justify-between">
+              <div className="flex gap-6 overflow-x-auto">
+                {categories.map((category) => (
+                  <button
+                    key={category}
+                    className={`flex items-center gap-2 px-4 py-2 text-sm font-medium whitespace-nowrap transition-colors
+                      ${selectedCategory === category 
+                        ? 'text-green-600 border-b-2 border-green-600' 
+                        : 'text-gray-600 hover:text-green-600'
+                      }`}
+                    onClick={() => setSelectedCategory(category)}
+                  >
+                    {category}
+                  </button>
+                ))}
+              </div>
+              
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowFilters(true)}
+                className="flex items-center gap-2"
+              >
+                <SlidersHorizontal className="w-4 h-4" />
+                Filters
+              </Button>
             </div>
           </div>
         </div>
@@ -497,136 +648,261 @@ function App() {
 
       {/* Category Icons Grid */}
       <div className="container mx-auto px-4 py-6">
-        <div className="grid grid-cols-6 lg:grid-cols-12 gap-4">
-          {categoryData.map((category, index) => {
-            const IconComponent = category.icon;
-            return (
-              <div key={index} className="flex flex-col items-center">
-                <div className={`w-16 h-16 rounded-full ${category.color} flex items-center justify-center hover:scale-105 transition-transform cursor-pointer`}>
-                  <IconComponent className="w-8 h-8 text-gray-700" />
-                </div>
-                <span className="text-xs text-center mt-2 font-medium">{category.name}</span>
+        <div className="grid grid-cols-3 lg:grid-cols-6 gap-4">
+          {groceryCategories.map((category, index) => (
+            <div 
+              key={index} 
+              className="flex flex-col items-center cursor-pointer"
+              onClick={() => setSelectedCategory(category.name)}
+            >
+              <div className={`w-16 h-16 rounded-full ${category.color} flex items-center justify-center hover:scale-105 transition-transform`}>
+                <span className="text-2xl">{category.icon}</span>
               </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Hero Banner */}
-      <div className="container mx-auto px-4 mb-8">
-        <div className="bg-gradient-to-r from-green-400 to-green-600 rounded-2xl p-8 relative overflow-hidden">
-          <div className="relative z-10">
-            <h2 className="text-3xl font-bold text-white mb-2">Paan Corner</h2>
-            <p className="text-white/90 mb-6 text-lg">
-              Get smoking accessories, fresheners & more in 10 mins<br />
-              this monsoon with Adbhog!
-            </p>
-            <Button className="bg-white text-green-600 hover:bg-gray-100 font-semibold px-6 py-3">
-              Order Now
-            </Button>
-          </div>
-          
-          {/* Decorative elements */}
-          <div className="absolute right-8 top-1/2 transform -translate-y-1/2">
-            <div className="grid grid-cols-3 gap-2">
-              <div className="w-12 h-12 bg-white/20 rounded-lg"></div>
-              <div className="w-12 h-12 bg-white/20 rounded-lg"></div>
-              <div className="w-12 h-12 bg-white/20 rounded-lg"></div>
-              <div className="w-12 h-12 bg-white/20 rounded-lg"></div>
-              <div className="w-12 h-12 bg-white/20 rounded-lg"></div>
-              <div className="w-12 h-12 bg-white/20 rounded-lg"></div>
+              <span className="text-xs text-center mt-2 font-medium">{category.name}</span>
             </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Deal Banners */}
-      <div className="container mx-auto px-4 mb-8">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Super Sonic Deals */}
-          <div className="bg-gradient-to-r from-gray-900 to-gray-800 rounded-2xl p-6 relative overflow-hidden">
-            <div className="flex justify-between items-start mb-4">
-              <div>
-                <h3 className="text-2xl font-bold text-white mb-1">Super Sonic</h3>
-                <h4 className="text-xl text-white mb-2">DEALS</h4>
-                <Badge className="bg-yellow-500 text-black font-bold">UP TO 90% OFF</Badge>
-              </div>
-              <img 
-                src="https://images.unsplash.com/photo-1498049794561-7780e7231661" 
-                alt="Electronics" 
-                className="w-20 h-20 object-cover rounded-lg"
-              />
-            </div>
-            
-            <div className="grid grid-cols-5 gap-2 mt-4">
-              {['Audio Gear & Watches', 'Home & Kitchen Appliances', 'Tech Accessories', 'Charging Needs', 'Personal Care & Grooming'].map((item, index) => (
-                <div key={index} className="text-center">
-                  <div className="w-12 h-12 bg-gray-700 rounded-lg mb-2 flex items-center justify-center">
-                    <Smartphone className="w-6 h-6 text-white" />
-                  </div>
-                  <p className="text-xs text-white">{item}</p>
-                  <Badge className="bg-yellow-500 text-black text-xs mt-1">UP TO 90% OFF</Badge>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Beauty LIT Fest */}
-          <div className="bg-gradient-to-r from-pink-200 to-pink-300 rounded-2xl p-6 relative overflow-hidden">
-            <div className="flex justify-between items-start mb-4">
-              <div>
-                <div className="text-sm font-medium text-gray-700 mb-1">Powered By LAKMÉ</div>
-                <h3 className="text-2xl font-bold text-red-600 mb-1">Beauty LIT</h3>
-                <h4 className="text-xl text-gray-800 mb-2">FEST</h4>
-                <Badge className="bg-red-500 text-white font-bold">UP TO 60% OFF</Badge>
-              </div>
-              <img 
-                src="https://images.unsplash.com/photo-1598528738936-c50861cc75a9" 
-                alt="Beauty Products" 
-                className="w-20 h-20 object-cover rounded-lg"
-              />
-            </div>
-            
-            <div className="grid grid-cols-5 gap-2 mt-4">
-              {['Lipstick Lags', 'Flawless Face', 'Dazzling Eyes', 'Nails & more', 'Korean Beauty'].map((item, index) => (
-                <div key={index} className="text-center">
-                  <div className="w-12 h-12 bg-pink-400 rounded-lg mb-2 flex items-center justify-center">
-                    <Sparkles className="w-6 h-6 text-white" />
-                  </div>
-                  <p className="text-xs text-gray-800">{item}</p>
-                  <Badge className="bg-red-500 text-white text-xs mt-1">UP TO 60% OFF</Badge>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Coffee Lovers Section */}
-      <div className="container mx-auto px-4 mb-8">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <p className="text-sm text-gray-600 uppercase tracking-wide mb-1">COFFEE LOVERS</p>
-            <h2 className="text-2xl font-bold text-amber-800">Dive into the<br />world of fresh<br />brew</h2>
-          </div>
-        </div>
-        
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-          {coffeeProducts.map((product) => (
-            <CoffeeProductCard key={product.id} product={product} />
           ))}
         </div>
       </div>
 
-      {/* Products Grid */}
+      {/* Hero Banner - Grocery Focused */}
+      <div className="container mx-auto px-4 mb-8">
+        <div className="bg-gradient-to-r from-green-400 to-green-600 rounded-2xl p-8 relative overflow-hidden">
+          <div className="relative z-10">
+            <h2 className="text-3xl font-bold text-white mb-2">Fresh Grocery Corner</h2>
+            <p className="text-white/90 mb-6 text-lg">
+              Get fresh vegetables, premium grains & daily essentials<br />
+              delivered in 15 mins with Adbhog!
+            </p>
+            <Button className="bg-white text-green-600 hover:bg-gray-100 font-semibold px-6 py-3">
+              Shop Now
+            </Button>
+          </div>
+          
+          <div className="absolute right-8 top-1/2 transform -translate-y-1/2">
+            <div className="grid grid-cols-3 gap-2">
+              {['🥬', '🌾', '🥛', '🫒', '🥜', '🧽'].map((emoji, i) => (
+                <div key={i} className="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center text-2xl">
+                  {emoji}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Featured Offers - Grocery Focused */}
+      <div className="container mx-auto px-4 mb-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Fresh Produce Deals */}
+          <div className="bg-gradient-to-r from-emerald-500 to-teal-600 rounded-2xl p-6 relative overflow-hidden">
+            <div className="relative z-10">
+              <h3 className="text-2xl font-bold text-white mb-1">Fresh Produce</h3>
+              <h4 className="text-xl text-white mb-2">DEALS</h4>
+              <Badge className="bg-yellow-500 text-black font-bold">UP TO 40% OFF</Badge>
+              
+              <div className="grid grid-cols-4 gap-2 mt-4">
+                {['Vegetables', 'Fruits', 'Herbs', 'Organic'].map((item, index) => (
+                  <div key={index} className="text-center">
+                    <div className="w-12 h-12 bg-emerald-400 rounded-lg mb-2 flex items-center justify-center">
+                      <span className="text-2xl">
+                        {index === 0 ? '🥬' : index === 1 ? '🍎' : index === 2 ? '🌿' : '✨'}
+                      </span>
+                    </div>
+                    <p className="text-xs text-white">{item}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Premium Grains */}
+          <div className="bg-gradient-to-r from-amber-200 to-orange-300 rounded-2xl p-6 relative overflow-hidden">
+            <div className="relative z-10">
+              <h3 className="text-2xl font-bold text-amber-800 mb-1">Premium Grains</h3>
+              <h4 className="text-xl text-amber-800 mb-2">COLLECTION</h4>
+              <Badge className="bg-amber-600 text-white font-bold">BEST QUALITY</Badge>
+              
+              <div className="grid grid-cols-4 gap-2 mt-4">
+                {['Basmati Rice', 'Wheat Flour', 'Millets', 'Quinoa'].map((item, index) => (
+                  <div key={index} className="text-center">
+                    <div className="w-12 h-12 bg-amber-300 rounded-lg mb-2 flex items-center justify-center">
+                      <span className="text-2xl">
+                        {index === 0 ? '🌾' : index === 1 ? '🌽' : index === 2 ? '🌿' : '🌱'}
+                      </span>
+                    </div>
+                    <p className="text-xs text-amber-800">{item}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Products Grid with Results Count */}
       <div className="container mx-auto px-4 pb-8">
-        <h2 className="text-2xl font-bold mb-6">All Products</h2>
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h2 className="text-2xl font-bold">{selectedCategory === 'All' ? 'All Products' : selectedCategory}</h2>
+            <p className="text-gray-600">{products.length} products found</p>
+          </div>
+        </div>
+        
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {products.map((product) => (
             <ProductCard key={product.id} product={product} />
           ))}
         </div>
+        
+        {products.length === 0 && (
+          <div className="text-center py-12">
+            <p className="text-gray-500 text-lg">No products found</p>
+            <p className="text-gray-400">Try adjusting your search or filters</p>
+          </div>
+        )}
       </div>
+
+      {/* Auth Dialog */}
+      <Dialog open={showAuth} onOpenChange={setShowAuth}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>{authMode === 'login' ? 'Login' : 'Sign Up'} to Adbhog</DialogTitle>
+          </DialogHeader>
+          
+          <form onSubmit={handleAuth} className="space-y-4">
+            {authMode === 'register' && (
+              <Input
+                placeholder="Full Name"
+                value={authData.name}
+                onChange={(e) => setAuthData({...authData, name: e.target.value})}
+                required
+              />
+            )}
+            
+            <Input
+              type="email"
+              placeholder="Email"
+              value={authData.email}
+              onChange={(e) => setAuthData({...authData, email: e.target.value})}
+              required
+            />
+            
+            <div className="relative">
+              <Input
+                type={showPassword ? "text" : "password"}
+                placeholder="Password"
+                value={authData.password}
+                onChange={(e) => setAuthData({...authData, password: e.target.value})}
+                required
+              />
+              <button
+                type="button"
+                className="absolute right-3 top-1/2 transform -translate-y-1/2"
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
+            
+            {authMode === 'register' && (
+              <Input
+                placeholder="Phone Number"
+                value={authData.phone}
+                onChange={(e) => setAuthData({...authData, phone: e.target.value})}
+                required
+              />
+            )}
+            
+            <Button type="submit" className="w-full bg-green-600 hover:bg-green-700">
+              {authMode === 'login' ? 'Login' : 'Sign Up'}
+            </Button>
+            
+            <p className="text-center text-sm">
+              {authMode === 'login' ? "Don't have an account? " : "Already have an account? "}
+              <button
+                type="button"
+                className="text-green-600 hover:underline"
+                onClick={() => setAuthMode(authMode === 'login' ? 'register' : 'login')}
+              >
+                {authMode === 'login' ? 'Sign Up' : 'Login'}
+              </button>
+            </p>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Filters Dialog */}
+      <Dialog open={showFilters} onOpenChange={setShowFilters}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Filter Products</DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-6">
+            <div>
+              <label className="block text-sm font-medium mb-2">Price Range</label>
+              <Slider
+                value={[filters.minPrice, filters.maxPrice]}
+                onValueChange={([min, max]) => setFilters({...filters, minPrice: min, maxPrice: max})}
+                max={1000}
+                step={10}
+                className="w-full"
+              />
+              <div className="flex justify-between text-sm text-gray-600 mt-1">
+                <span>₹{filters.minPrice}</span>
+                <span>₹{filters.maxPrice}</span>
+              </div>
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium mb-2">Brand</label>
+              <Select value={filters.brand} onValueChange={(value) => setFilters({...filters, brand: value})}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select brand" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">All Brands</SelectItem>
+                  <SelectItem value="Adbhog Fresh">Adbhog Fresh</SelectItem>
+                  <SelectItem value="Adbhog Premium">Adbhog Premium</SelectItem>
+                  <SelectItem value="Adbhog Organic">Adbhog Organic</SelectItem>
+                  <SelectItem value="Adbhog Kitchen">Adbhog Kitchen</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium mb-2">Sort By</label>
+              <Select value={filters.sortBy} onValueChange={(value) => setFilters({...filters, sortBy: value})}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="name">Name (A-Z)</SelectItem>
+                  <SelectItem value="price_low">Price (Low to High)</SelectItem>
+                  <SelectItem value="price_high">Price (High to Low)</SelectItem>
+                  <SelectItem value="rating">Rating (High to Low)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                onClick={() => setFilters({subcategory: '', minPrice: 0, maxPrice: 1000, brand: '', sortBy: 'name'})}
+                className="flex-1"
+              >
+                Clear Filters
+              </Button>
+              <Button 
+                className="flex-1 bg-green-600 hover:bg-green-700"
+                onClick={() => setShowFilters(false)}
+              >
+                Apply Filters
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Cart Dialog */}
       <Dialog open={showCart} onOpenChange={setShowCart}>
@@ -735,7 +1011,7 @@ function App() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="now">Deliver Now (6 mins)</SelectItem>
+                  <SelectItem value="now">Deliver Now (15 mins)</SelectItem>
                   <SelectItem value="1hour">Within 1 Hour</SelectItem>
                   <SelectItem value="2hours">Within 2 Hours</SelectItem>
                   <SelectItem value="evening">This Evening (6-8 PM)</SelectItem>
@@ -797,7 +1073,7 @@ function App() {
             <CheckCircle className="w-16 h-16 text-green-600 mx-auto" />
             <h2 className="text-2xl font-bold text-green-600">Order Placed!</h2>
             <p className="text-gray-600">
-              Your order has been confirmed and will be delivered by{' '}
+              Your grocery order has been confirmed and will be delivered by{' '}
               <span className="font-semibold">{orderDetails?.estimated_delivery}</span>
             </p>
             <p className="text-sm text-gray-500">
