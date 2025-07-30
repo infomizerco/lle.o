@@ -194,9 +194,12 @@ class AdbhogAPITester:
         return self.run_test("Update Cart Quantity", "PUT", "api/cart/update", 200, data=cart_data, auth_required=True)
 
     def test_place_order(self):
-        """Test placing an order"""
+        """Test placing an order (authenticated)"""
+        if not self.test_product_id:
+            print("❌ No product ID available for order test")
+            return False
+            
         order_data = {
-            "user_id": self.user_id,
             "items": [
                 {
                     "product_id": self.test_product_id,
@@ -208,19 +211,19 @@ class AdbhogAPITester:
             "delivery_address": "123 Test Street, Delhi, India",
             "payment_method": "cod"
         }
-        success, response = self.run_test("Place Order", "POST", "api/orders", 200, data=order_data)
+        success, response = self.run_test("Place Order", "POST", "api/orders", 200, data=order_data, auth_required=True)
         if success and 'order_id' in response:
             print(f"   Order ID: {response['order_id']}")
             print(f"   Estimated delivery: {response.get('estimated_delivery')}")
         return success
 
     def test_get_orders(self):
-        """Test getting user orders"""
-        return self.run_test("Get User Orders", "GET", f"api/orders/{self.user_id}", 200)
+        """Test getting user orders (authenticated)"""
+        return self.run_test("Get User Orders", "GET", "api/orders", 200, auth_required=True)
 
     def test_clear_cart(self):
-        """Test clearing cart"""
-        return self.run_test("Clear Cart", "DELETE", f"api/cart/clear/{self.user_id}", 200)
+        """Test clearing cart (authenticated)"""
+        return self.run_test("Clear Cart", "DELETE", "api/cart/clear", 200, auth_required=True)
 
 def main():
     print("🚀 Starting Adbhog API Tests")
