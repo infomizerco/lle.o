@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ShoppingCart, Search, MapPin, Star, Plus, Minus, Trash2, Heart, Clock, CheckCircle, X } from 'lucide-react';
+import { ShoppingCart, Search, MapPin, Star, Plus, Minus, Trash2, Heart, Clock, CheckCircle, X, ChevronRight, Zap, Gift, Coffee, Smartphone, Sparkles, Apple, Milk, Wheat, Candy, Gamepad2, ShirtIcon, Diamond, Snowflake, IceCream, Package } from 'lucide-react';
 import { Button } from './components/ui/button';
 import { Input } from './components/ui/input';
 import { Card, CardContent } from './components/ui/card';
@@ -24,7 +24,7 @@ function App() {
   const [checkoutStep, setCheckoutStep] = useState(1);
   const [orderSuccess, setOrderSuccess] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [currentLocation, setCurrentLocation] = useState('Delhi, India');
+  const [currentLocation, setCurrentLocation] = useState('Gomti Nagar, Viram Khand 5, Lucknow...');
   const [isServiceable, setIsServiceable] = useState(true);
   const [orderDetails, setOrderDetails] = useState(null);
 
@@ -38,6 +38,82 @@ function App() {
     deliveryTime: 'now',
     paymentMethod: 'cod'
   });
+
+  // Category icons mapping
+  const categoryIcons = {
+    'Fruits & Vegetables': Apple,
+    'Dairy': Milk,
+    'Grains': Wheat,
+    'Snacks': Candy,
+    'Pantry': Package,
+    'Electronics': Smartphone,
+    'Beauty': Sparkles,
+    'Cafe': Coffee,
+    'Toys': Gamepad2,
+    'Fashion': ShirtIcon,
+    'Jewellery': Diamond,
+    'Frozen': Snowflake,
+    'Ice Creams': IceCream
+  };
+
+  const categoryData = [
+    { name: 'Fruits & Vegetables', icon: Apple, color: 'bg-green-100' },
+    { name: 'Dairy', icon: Milk, color: 'bg-blue-100' },
+    { name: 'Grains', icon: Wheat, color: 'bg-yellow-100' },
+    { name: 'Snacks', icon: Candy, color: 'bg-red-100' },
+    { name: 'Pantry', icon: Package, color: 'bg-orange-100' },
+    { name: 'Electronics', icon: Smartphone, color: 'bg-purple-100' },
+    { name: 'Beauty', icon: Sparkles, color: 'bg-pink-100' },
+    { name: 'Cafe', icon: Coffee, color: 'bg-amber-100' },
+    { name: 'Toys', icon: Gamepad2, color: 'bg-indigo-100' },
+    { name: 'Fashion', icon: ShirtIcon, color: 'bg-teal-100' },
+    { name: 'Jewellery', icon: Diamond, color: 'bg-cyan-100' },
+    { name: 'Frozen', icon: Snowflake, color: 'bg-slate-100' }
+  ];
+
+  // Coffee products for featured section
+  const [coffeeProducts, setCoffeeProducts] = useState([
+    {
+      id: 'coffee-1',
+      name: 'Classic Cold Coffee',
+      price: 85,
+      image: 'https://images.unsplash.com/photo-1461023058943-07fcbe16d735',
+      category: 'Beverages',
+      rating: 4.6
+    },
+    {
+      id: 'coffee-2',
+      name: 'Premium Latte',
+      price: 95,
+      image: 'https://images.unsplash.com/photo-1509042239860-f550ce710b93',
+      category: 'Beverages',
+      rating: 4.8
+    },
+    {
+      id: 'coffee-3',
+      name: 'Cappuccino Special',
+      price: 90,
+      image: 'https://images.unsplash.com/photo-1506619216599-9d16d0903dfd',
+      category: 'Beverages',
+      rating: 4.7
+    },
+    {
+      id: 'coffee-4',
+      name: 'Iced Americano',
+      price: 75,
+      image: 'https://images.unsplash.com/photo-1461023058943-07fcbe16d735',
+      category: 'Beverages',
+      rating: 4.5
+    },
+    {
+      id: 'coffee-5',
+      name: 'Mocha Delight',
+      price: 110,
+      image: 'https://images.unsplash.com/photo-1509042239860-f550ce710b93',
+      category: 'Beverages',
+      rating: 4.9
+    }
+  ]);
 
   useEffect(() => {
     fetchProducts();
@@ -101,7 +177,6 @@ function App() {
       const response = await fetch(`${BACKEND_URL}/api/location/check?lat=28.6139&lng=77.2090`);
       const data = await response.json();
       if (data.success) {
-        setCurrentLocation(data.area);
         setIsServiceable(data.serviceable);
       }
     } catch (error) {
@@ -219,7 +294,7 @@ function App() {
         });
         setOrderSuccess(true);
         setShowCheckout(false);
-        fetchCart(); // This will clear the cart display
+        fetchCart();
       }
     } catch (error) {
       console.error('Error placing order:', error);
@@ -293,14 +368,37 @@ function App() {
                   className="bg-green-600 hover:bg-green-700"
                   onClick={() => addToCart(product.id)}
                 >
-                  <Plus className="w-4 h-4 mr-1" />
-                  Add
+                  ADD
                 </Button>
               )}
             </div>
           </div>
         </CardContent>
       </Card>
+    );
+  };
+
+  const CoffeeProductCard = ({ product }) => {
+    return (
+      <div className="coffee-product-card relative">
+        <img
+          src={product.image}
+          alt={product.name}
+          className="w-full h-32 object-cover rounded-lg"
+        />
+        <div className="absolute top-2 right-2">
+          <Badge className="bg-green-600 text-white text-xs">0</Badge>
+        </div>
+        <div className="mt-2">
+          <h4 className="font-medium text-sm">{product.name}</h4>
+          <div className="flex items-center justify-between mt-1">
+            <span className="font-bold text-sm">₹{product.price}</span>
+            <Button size="sm" className="h-6 px-3 text-xs bg-pink-500 hover:bg-pink-600">
+              ADD
+            </Button>
+          </div>
+        </div>
+      </div>
     );
   };
 
@@ -313,17 +411,28 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-blue-50">
+    <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b shadow-sm">
-        <div className="container mx-auto px-4 py-4">
+      <header className="sticky top-0 z-50 bg-white border-b shadow-sm">
+        <div className="container mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <h1 className="text-2xl font-bold text-green-600">Adbhog</h1>
-              <div className="flex items-center gap-2 text-sm text-gray-600">
-                <MapPin className="w-4 h-4" />
-                <span>{currentLocation}</span>
-                {isServiceable && <Badge variant="secondary" className="bg-green-100 text-green-700">Serviceable</Badge>}
+            <div className="flex items-center gap-6">
+              <div className="flex items-center gap-3">
+                <h1 className="text-2xl font-bold text-purple-600">adbhog</h1>
+                <Badge className="bg-green-500 text-white px-2 py-1 text-xs">SUPER SAVER</Badge>
+              </div>
+              
+              <div className="flex flex-col">
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold text-sm">Delivery in</span>
+                  <span className="font-bold text-green-600">6 Mins</span>
+                  <Zap className="w-4 h-4 text-blue-500" />
+                </div>
+                <div className="flex items-center gap-1 text-xs text-gray-600">
+                  <MapPin className="w-3 h-3" />
+                  <span>{currentLocation}</span>
+                  <ChevronRight className="w-3 h-3" />
+                </div>
               </div>
             </div>
             
@@ -331,12 +440,16 @@ function App() {
               <div className="relative">
                 <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                 <Input
-                  placeholder="Search products..."
-                  className="pl-10 w-64"
+                  placeholder="Search for cheese slices"
+                  className="pl-10 w-80"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
               </div>
+              
+              <Button variant="ghost" size="sm">
+                Login
+              </Button>
               
               <Button
                 variant="outline"
@@ -354,30 +467,160 @@ function App() {
             </div>
           </div>
         </div>
+        
+        {/* Category Tabs */}
+        <div className="border-t bg-white">
+          <div className="container mx-auto px-4 py-2">
+            <div className="flex gap-6 overflow-x-auto">
+              {['All', 'Cafe', 'Home', 'Toys', 'Fresh', 'Electronics', 'Mobiles', 'Beauty', 'Fashion'].map((category) => (
+                <button
+                  key={category}
+                  className={`flex items-center gap-2 px-4 py-2 text-sm font-medium whitespace-nowrap transition-colors
+                    ${selectedCategory === category 
+                      ? 'text-purple-600 border-b-2 border-purple-600' 
+                      : 'text-gray-600 hover:text-purple-600'
+                    }`}
+                  onClick={() => setSelectedCategory(category)}
+                >
+                  {category === 'All' && <Package className="w-4 h-4" />}
+                  {category === 'Cafe' && <Coffee className="w-4 h-4" />}
+                  {category === 'Electronics' && <Smartphone className="w-4 h-4" />}
+                  {category === 'Beauty' && <Sparkles className="w-4 h-4" />}
+                  {category === 'Fashion' && <ShirtIcon className="w-4 h-4" />}
+                  {category}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
       </header>
 
-      {/* Category Filter */}
+      {/* Category Icons Grid */}
       <div className="container mx-auto px-4 py-6">
-        <div className="flex gap-2 overflow-x-auto pb-2">
-          {categories.map((category) => (
-            <Button
-              key={category}
-              variant={selectedCategory === category ? "default" : "outline"}
-              className={`whitespace-nowrap ${
-                selectedCategory === category 
-                  ? "bg-green-600 hover:bg-green-700" 
-                  : "hover:bg-green-50"
-              }`}
-              onClick={() => setSelectedCategory(category)}
-            >
-              {category}
+        <div className="grid grid-cols-6 lg:grid-cols-12 gap-4">
+          {categoryData.map((category, index) => {
+            const IconComponent = category.icon;
+            return (
+              <div key={index} className="flex flex-col items-center">
+                <div className={`w-16 h-16 rounded-full ${category.color} flex items-center justify-center hover:scale-105 transition-transform cursor-pointer`}>
+                  <IconComponent className="w-8 h-8 text-gray-700" />
+                </div>
+                <span className="text-xs text-center mt-2 font-medium">{category.name}</span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Hero Banner */}
+      <div className="container mx-auto px-4 mb-8">
+        <div className="bg-gradient-to-r from-green-400 to-green-600 rounded-2xl p-8 relative overflow-hidden">
+          <div className="relative z-10">
+            <h2 className="text-3xl font-bold text-white mb-2">Paan Corner</h2>
+            <p className="text-white/90 mb-6 text-lg">
+              Get smoking accessories, fresheners & more in 10 mins<br />
+              this monsoon with Adbhog!
+            </p>
+            <Button className="bg-white text-green-600 hover:bg-gray-100 font-semibold px-6 py-3">
+              Order Now
             </Button>
+          </div>
+          
+          {/* Decorative elements */}
+          <div className="absolute right-8 top-1/2 transform -translate-y-1/2">
+            <div className="grid grid-cols-3 gap-2">
+              <div className="w-12 h-12 bg-white/20 rounded-lg"></div>
+              <div className="w-12 h-12 bg-white/20 rounded-lg"></div>
+              <div className="w-12 h-12 bg-white/20 rounded-lg"></div>
+              <div className="w-12 h-12 bg-white/20 rounded-lg"></div>
+              <div className="w-12 h-12 bg-white/20 rounded-lg"></div>
+              <div className="w-12 h-12 bg-white/20 rounded-lg"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Deal Banners */}
+      <div className="container mx-auto px-4 mb-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Super Sonic Deals */}
+          <div className="bg-gradient-to-r from-gray-900 to-gray-800 rounded-2xl p-6 relative overflow-hidden">
+            <div className="flex justify-between items-start mb-4">
+              <div>
+                <h3 className="text-2xl font-bold text-white mb-1">Super Sonic</h3>
+                <h4 className="text-xl text-white mb-2">DEALS</h4>
+                <Badge className="bg-yellow-500 text-black font-bold">UP TO 90% OFF</Badge>
+              </div>
+              <img 
+                src="https://images.unsplash.com/photo-1498049794561-7780e7231661" 
+                alt="Electronics" 
+                className="w-20 h-20 object-cover rounded-lg"
+              />
+            </div>
+            
+            <div className="grid grid-cols-5 gap-2 mt-4">
+              {['Audio Gear & Watches', 'Home & Kitchen Appliances', 'Tech Accessories', 'Charging Needs', 'Personal Care & Grooming'].map((item, index) => (
+                <div key={index} className="text-center">
+                  <div className="w-12 h-12 bg-gray-700 rounded-lg mb-2 flex items-center justify-center">
+                    <Smartphone className="w-6 h-6 text-white" />
+                  </div>
+                  <p className="text-xs text-white">{item}</p>
+                  <Badge className="bg-yellow-500 text-black text-xs mt-1">UP TO 90% OFF</Badge>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Beauty LIT Fest */}
+          <div className="bg-gradient-to-r from-pink-200 to-pink-300 rounded-2xl p-6 relative overflow-hidden">
+            <div className="flex justify-between items-start mb-4">
+              <div>
+                <div className="text-sm font-medium text-gray-700 mb-1">Powered By LAKMÉ</div>
+                <h3 className="text-2xl font-bold text-red-600 mb-1">Beauty LIT</h3>
+                <h4 className="text-xl text-gray-800 mb-2">FEST</h4>
+                <Badge className="bg-red-500 text-white font-bold">UP TO 60% OFF</Badge>
+              </div>
+              <img 
+                src="https://images.unsplash.com/photo-1598528738936-c50861cc75a9" 
+                alt="Beauty Products" 
+                className="w-20 h-20 object-cover rounded-lg"
+              />
+            </div>
+            
+            <div className="grid grid-cols-5 gap-2 mt-4">
+              {['Lipstick Lags', 'Flawless Face', 'Dazzling Eyes', 'Nails & more', 'Korean Beauty'].map((item, index) => (
+                <div key={index} className="text-center">
+                  <div className="w-12 h-12 bg-pink-400 rounded-lg mb-2 flex items-center justify-center">
+                    <Sparkles className="w-6 h-6 text-white" />
+                  </div>
+                  <p className="text-xs text-gray-800">{item}</p>
+                  <Badge className="bg-red-500 text-white text-xs mt-1">UP TO 60% OFF</Badge>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Coffee Lovers Section */}
+      <div className="container mx-auto px-4 mb-8">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <p className="text-sm text-gray-600 uppercase tracking-wide mb-1">COFFEE LOVERS</p>
+            <h2 className="text-2xl font-bold text-amber-800">Dive into the<br />world of fresh<br />brew</h2>
+          </div>
+        </div>
+        
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+          {coffeeProducts.map((product) => (
+            <CoffeeProductCard key={product.id} product={product} />
           ))}
         </div>
       </div>
 
       {/* Products Grid */}
       <div className="container mx-auto px-4 pb-8">
+        <h2 className="text-2xl font-bold mb-6">All Products</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {products.map((product) => (
             <ProductCard key={product.id} product={product} />
@@ -492,7 +735,7 @@ function App() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="now">Deliver Now (15-30 mins)</SelectItem>
+                  <SelectItem value="now">Deliver Now (6 mins)</SelectItem>
                   <SelectItem value="1hour">Within 1 Hour</SelectItem>
                   <SelectItem value="2hours">Within 2 Hours</SelectItem>
                   <SelectItem value="evening">This Evening (6-8 PM)</SelectItem>
