@@ -126,10 +126,21 @@ class AdbhogAPITester:
         return self.run_test("Get Products by Category", "GET", "api/products", 200, 
                            params={"category": "Fruits"})
 
-    def test_get_products_with_search(self):
-        """Test searching products"""
-        return self.run_test("Search Products", "GET", "api/products", 200, 
-                           params={"search": "tomato"})
+    def test_get_products_with_advanced_filters(self):
+        """Test advanced product filtering"""
+        params = {
+            "category": "Fruits & Vegetables",
+            "min_price": 40,
+            "max_price": 200,
+            "brand": "Adbhog",
+            "sort_by": "price_low"
+        }
+        return self.run_test("Advanced Product Filtering", "GET", "api/products", 200, params=params)
+
+    def test_search_suggestions(self):
+        """Test search suggestions API"""
+        return self.run_test("Search Suggestions", "GET", "api/search/suggestions", 200, 
+                           params={"q": "tom"})
 
     def test_get_categories(self):
         """Test getting categories"""
