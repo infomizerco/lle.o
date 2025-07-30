@@ -8,8 +8,10 @@ class AdbhogAPITester:
         self.base_url = base_url
         self.tests_run = 0
         self.tests_passed = 0
-        self.user_id = "demo-user-123"
+        self.token = None
+        self.user_id = None
         self.test_product_id = None
+        self.test_user_email = f"test_user_{datetime.now().strftime('%H%M%S')}@adbhog.com"
 
     def run_test(self, name, method, endpoint, expected_status, data=None, params=None):
         """Run a single API test"""
