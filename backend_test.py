@@ -66,6 +66,50 @@ class AdbhogAPITester:
         """Test root endpoint"""
         return self.run_test("Root Endpoint", "GET", "", 200)
 
+    # Authentication Tests
+    def test_user_registration(self):
+        """Test user registration"""
+        user_data = {
+            "name": "Test User",
+            "email": self.test_user_email,
+            "password": "TestPass123!",
+            "phone": "9876543210"
+        }
+        success, response = self.run_test("User Registration", "POST", "api/auth/register", 200, data=user_data)
+        if success and 'token' in response:
+            self.token = response['token']
+            self.user_id = response['user']['id']
+            print(f"   User ID: {self.user_id}")
+            print(f"   Token received: ✓")
+        return success
+
+    def test_user_login(self):
+        """Test user login"""
+        login_data = {
+            "email": self.test_user_email,
+            "password": "TestPass123!"
+        }
+        success, response = self.run_test("User Login", "POST", "api/auth/login", 200, data=login_data)
+        if success and 'token' in response:
+            self.token = response['token']
+            self.user_id = response['user']['id']
+            print(f"   Login successful for: {response['user']['name']}")
+        return success
+
+    def test_get_current_user(self):
+        """Test getting current user info"""
+        return self.run_test("Get Current User", "GET", "api/auth/me", 200, auth_required=True)
+
+    def test_protected_endpoint_without_auth(self):
+        """Test accessing protected endpoint without authentication"""
+        # Temporarily remove token
+        temp_token = self.token
+        self.token = None
+        success, _ = self.run_test("Protected Endpoint (No Auth)", "GET", "api/cart", 401, auth_required=False)
+        # Restore token
+        self.token = temp_token
+        return success
+
     def test_get_products(self):
         """Test getting all products"""
         success, response = self.run_test("Get All Products", "GET", "api/products", 200)
