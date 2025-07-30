@@ -158,7 +158,7 @@ class AdbhogAPITester:
                            params={"lat": 28.6139, "lng": 77.2090})
 
     def test_add_to_cart(self):
-        """Test adding item to cart"""
+        """Test adding item to cart (authenticated)"""
         if not self.test_product_id:
             print("❌ No product ID available for cart test")
             return False
@@ -166,13 +166,13 @@ class AdbhogAPITester:
         cart_data = {
             "product_id": self.test_product_id,
             "quantity": 2,
-            "user_id": self.user_id
+            "user_id": "will_be_overridden"  # Backend will use authenticated user
         }
-        return self.run_test("Add to Cart", "POST", "api/cart/add", 200, data=cart_data)
+        return self.run_test("Add to Cart", "POST", "api/cart/add", 200, data=cart_data, auth_required=True)
 
     def test_get_cart(self):
-        """Test getting cart contents"""
-        success, response = self.run_test("Get Cart", "GET", f"api/cart/{self.user_id}", 200)
+        """Test getting cart contents (authenticated)"""
+        success, response = self.run_test("Get Cart", "GET", "api/cart", 200, auth_required=True)
         if success:
             cart = response.get('cart', [])
             total_items = response.get('total_items', 0)
@@ -181,7 +181,7 @@ class AdbhogAPITester:
         return success
 
     def test_update_cart(self):
-        """Test updating cart quantity"""
+        """Test updating cart quantity (authenticated)"""
         if not self.test_product_id:
             print("❌ No product ID available for cart update test")
             return False
@@ -189,9 +189,9 @@ class AdbhogAPITester:
         cart_data = {
             "product_id": self.test_product_id,
             "quantity": 3,
-            "user_id": self.user_id
+            "user_id": "will_be_overridden"
         }
-        return self.run_test("Update Cart Quantity", "PUT", "api/cart/update", 200, data=cart_data)
+        return self.run_test("Update Cart Quantity", "PUT", "api/cart/update", 200, data=cart_data, auth_required=True)
 
     def test_place_order(self):
         """Test placing an order"""
