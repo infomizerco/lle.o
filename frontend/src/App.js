@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { categories as dummyCategories, products as dummyProducts } from './data/dummyData';
 import { ShoppingCart, Search, MapPin, Star, Plus, Minus, Trash2, Heart, Clock, CheckCircle, X, ChevronRight, Zap, Gift, Coffee, User, LogOut, Eye, EyeOff, Filter, SlidersHorizontal } from 'lucide-react';
 import { Button } from './components/ui/button';
 import { Input } from './components/ui/input';
@@ -130,6 +131,9 @@ function App() {
       }
     } catch (error) {
       console.error('Error fetching products:', error);
+      // Fallback to locally bundled dummy data if API request fails
+      setAllProducts(dummyProducts);
+      setProducts(dummyProducts);
     } finally {
       setLoading(false);
     }
@@ -144,6 +148,8 @@ function App() {
       }
     } catch (error) {
       console.error('Error fetching categories:', error);
+      // Use dummy categories if backend is unreachable
+      setCategories(['All', ...dummyCategories.map(cat => cat.name)]);
     }
   };
 
